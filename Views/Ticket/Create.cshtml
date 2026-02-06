@@ -1,0 +1,63 @@
+@model TicketSystem.ViewModels.CreateTicketViewModel
+
+@{
+    ViewData["Title"] = "ثبت درخواست جدید";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-success text-white py-3">
+                    <h4 class="mb-0">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        ثبت درخواست جدید
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-4">
+                            <label asp-for="Title" class="form-label fw-bold">
+                                <i class="bi bi-card-heading me-1"></i>
+                                عنوان درخواست
+                            </label>
+                            <input asp-for="Title" class="form-control form-control-lg" 
+                                   placeholder="مثال: مشکل در ورود به سیستم" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-bold">
+                                <i class="bi bi-text-paragraph me-1"></i>
+                                توضیحات درخواست
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="6"
+                                      placeholder="لطفاً جزئیات درخواست خود را شرح دهید..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <div class="form-text">
+                                هرچه تو-success btn-lg pxامل‌تری ارائه دهید، پاسخگویی سریع‌تر خواهد بود.
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success btn-lg px-4">
+                                <i class="bi bi-send me-2"></i>
+                                ثبت درخواست
+                            </button>
+                            <a asp-action="Dashboard" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="bi bi-arrow-right me-2"></i>
+                                انصراف
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -4,109 +4,108 @@ using TicketSystem.Data;
 using TicketSystem.Models;
 using TicketSystem.ViewModels;
 
-namespace TicketSystem.Controllers;
-
-public class AccountController : Controller
+namespace TicketSystem.Controllers
 {
-    private readonly ApplicationDbContext _context;
-
-    public AccountController(ApplicationDbContext context)
+    public class AccountController : Controller
     {
-        _context = context;
-    }
+        private readonly ApplicationDbContext _context;
 
-    // GET: /Account/Login
-    public IActionResult Login()
-    {
-        // اگر کاربر لاگین کرده، به داشبورد برود
-        if (HttpContext.Session.GetInt32("UserId") != null)
+        public AccountController(ApplicationDbContext context)
         {
-            var role = HttpContext.Session.GetString("UserRole");
-            if (role == "Admin")
-                return RedirectToAction("Index", "Admin");
-            return RedirectToAction("Index", "Tickets");
-        }
-        return View();
-    }
-
-    // POST: /Account/Login
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(LoginViewModel model)
-    {
-        if (!ModelState.IsValid)
-            return View(model);
-
-        var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHash == model.Password);
-
-        if (user == null)
-        {
-            ModelState.AddModelError("", "ایمیل یا رمز عبور اشتباه است");
-            return View(model);
+            _context = context;
         }
 
-        // ذخیره اطلاعات در Session
-        HttpContext.Session.SetInt32("UserId", user.Id);
-        HttpContext.Session.SetString("UserName", user.FullName);
-        HttpContext.Session.SetString("UserRole", user.Role);
-
-        // هدایت بر اساس نقش
-        if (user.Role == "Admin")
-            return RedirectToAction("Index", "Admin");
-        
-        return RedirectToAction("Index", "Tickets");
-    }
-
-    // GET: /Account/Register
-    public IActionResult Register()
-    {
-        if (HttpContext.Session.GetInt32("UserId") != null)
+        // GET: /Account/Login
+        public IActionResult Login()
         {
-            return RedirectToAction("Index", "Tickets");
+            if (HttpContext.Session.GetInt32("UserId") != null)
+            {
+                var role = HttpContext.Session.GetString("UserRole");
+                if (role == "Admin")
+                    return RedirectToAction("Dashboard", "Admin");
+                return RedirectToAction("Dashboard", "Tickets");
+            }
+            return View();
         }
-        return View();
-    }
 
-    // POST: /Account/Register
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Register(RegisterViewModel model)
-    {
-        if (!ModelState.IsValid)
-            return View(model);
-
-        // چک کردن تکراری نبودن ایمیل
-        if (await _context.Users.AnyAsync(u => u.Email == model.Email))
+        // POST: /Account/Login
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
-            ModelState.AddModelError("Email", "این ایمیل قبلاً ثبت شده است");
+            if (ModelState.IsValid)
+            {
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHash == model.Password);
+
+                if (user != null)
+                {
+                    HttpContext.Session.SetInt32("UserId", user.Id);
+                    HttpContext.Session.SetString("UserName", user.FullName);
+                    HttpContext.Session.SetString("UserRole", user.Role);
+
+                    if (user.Role == "Admin")
+                    {
+                        return RedirectToAction("Dashboard", "Admin");
+                    }
+                    return RedirectToAction("Dashboard", "Tickets");
+                }
+
+                ModelState.AddModelError("", "ایمیل یا رمز عبور اشتباه است");
+            }
             return View(model);
         }
 
-        // ساخت کاربر جدید
-        var user = new User
+        // GET: /Account/Register
+        public IActionResult Register()
         {
-            FullName = model.FullName,
-            Email = model.Email,
-            PasswordHash = model.Password, // در پروژه واقعی باید Hash شود
-            Role = "User"
-        };
+            if (HttpContext.Session.GetInt32("UserId") != null)
+            {
+                return RedirectToAction("Dashboard", "Tickets");
+            }
+            return View();
+        }
 
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        // POST: /Account/Register
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var existingUser = await _context.Users.AnyAsync(u => u.Email == model.Email);
+                if (existingUser)
+                {
+                    ModelState.AddModelError("Email", "این ایمیل قبلاً ثبت شده است");
+                    return View(model);
+                }
 
-        // لاگین خودکار
-        HttpContext.Session.SetInt32("UserId", user.Id);
-        HttpContext.Session.SetString("UserName", user.FullName);
-        HttpContext.Session.SetString("UserRole", user.Role);
+                var user = new User
+                {
+                    FullName = model.FullName,
+                    Email = model.Email,
+                    PasswordHash = model.Password, // Note:  production, hash the password!
+                    Role = "User"
+                };
 
-        return RedirectToAction("Index", "Tickets");
-    }
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
 
-    // GET: /Account/Logout
-    public IActionResult Logout()
-    {
-        HttpContext.Session.Clear();
-        return RedirectToAction("Login");
+                // Auto login after registration
+                HttpContext.Session.SetInt32("UserId", user.Id);
+                HttpContext.Session.SetString("UserName", user.FullName);
+                HttpContext.Session.SetString("UserRole", user.Role);
+
+                return RedirectToAction("Dashboard", "Tickets");
+            }
+            return View(model);
+        }
+
+        // GET: /Account/Logout
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
+            return RedirectToAction("Index", "Home");
+        }
     }
 }
