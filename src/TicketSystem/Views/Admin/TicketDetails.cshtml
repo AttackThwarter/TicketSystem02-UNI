@@ -1,0 +1,152 @@
+@model TicketSystem.ViewModels.AdminTicketDetailsViewModel
+@{
+    ViewData["Title"] = "جزئیات درخواست";
+}
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="AllTickets">مدیریت درخواست‌ها</a></li>
+            <li class="breadcrumb-item active">درخواست #@Model.Id</li>
+        </ol>
+    </nav>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- ستون اصلی -->
+        <div class="col-lg-8">
+            <!-- کارت اطلاعات تیکت -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-ticket-detailed me-2"></i>@Model.Title</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 p-3 bg-light rounded">
+                        <p class="mb-0" style="white-space: pre-wrap;">@Model.Description</p>
+                    </div>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar me-1"></i>تاریخ ثبت: @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+                    </small>
+                </div>
+            </div>
+
+            <!-- پاسخ‌ها -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-chat-dots me-2"></i>پاسخ‌ها (@Model.Replies.Count)</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.Replies.Any())
+                    {
+                        @foreach (var reply in Model.Replies)
+                        {
+                            <div class="d-flex mb-3 @(reply.IsAdminReply ? "justify-content-start" : "justify-content-end")">
+                                <div class="card @(reply.IsAdminReply ? "bg-primary text-white" : "bg-light") p-3" 
+                                     style="max-width: 80%; border-radius: 15px;">
+                                    <small class="fw-bold">
+                                        @(reply.IsAdminReply ? "👨‍💼 پاسخ مدیر" : "👤 پاسخ کاربر")
+                                    </small>
+                                    <p class="mb-1" style="white-space: pre-wrap;">@reply.Message</p>
+                                    <small class="@(reply.IsAdminReply ? "text-white-50" : "text-muted")">
+                                        @reply.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+                                    </small>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center">هنوز پاسخی ثبت نشده است</p>
+                    }
+                </div>
+            </div>
+
+            <!-- فرم ارسال پاسخ ادمین -->
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-reply me-2"></i>ارسال پاسخ</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AdminReply" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <textarea name="message" class="form-control" rows="4" 
+                                      placeholder="پاسخ خود را بنویسید..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-send me-1"></i>ارسال پاسخ
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ستون کناری -->
+        <div class="col-lg-4">
+            <!-- اطلاعات کاربر -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>اطلاعات کاربر</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>نام:</strong> @Model.UserFullName</p>
+                    <p><strong>ایمیل:</strong> @Model.UserEmail</p>
+                </div>
+            </div>
+
+            <!-- تغییر وضعیت -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-gear me-2"></i>تغییر وضعیت</h6>
+                </div>
+                <div class="card-body">
+                    @{
+                        var currentBadgeClass = Model.Status switch
+                        {
+                            "Open" => "bg-warning text-dark",
+                            "InProgress" => "bg-info",
+                            "Closed" => "bg-success",
+                            _ => "bg-secondary"
+                        };
+                        var currentStatusText = Model.Status switch
+                        {
+                            "Open" => "باز",
+                            "InProgress" => "در حال بررسی",
+                            "Closed" => "بسته شده",
+                            _ => Model.Status
+                        };
+                    }
+                    <p>وضعیت فعلی: <span class="badge @currentBadgeClass">@currentStatusText</span></p>
+                    
+                    <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <select name="newStatus" class="form-select">
+                                <option value="Open" selected="@(Model.Status == "Open")">باز</option>
+                                <option value="InProgress" selected="@(Model.Status == "InProgress")">در حال بررسی</option>
+                                <option value="Closed" selected="@(Model.Status == "Closed")">بسته شده</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="bi bi-arrow-repeat me-1"></i>تغییر وضعیت
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

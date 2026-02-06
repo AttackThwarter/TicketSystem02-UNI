@@ -15,20 +15,20 @@ namespace TicketSystem.Controllers
             _context = context;
         }
 
-        // GET: /Account/Login
+        // صفحه ورود
         public IActionResult Login()
         {
+            // اگر قبلاً لاگین کرده، به داشبورد برو
             if (HttpContext.Session.GetInt32("UserId") != null)
             {
                 var role = HttpContext.Session.GetString("UserRole");
                 if (role == "Admin")
-                    return RedirectToAction("Dashboard", "Admin");
+                    return RedirectToAction("AllTickets", "Admin");
                 return RedirectToAction("Dashboard", "Tickets");
             }
             return View();
         }
 
-        // POST: /Account/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
@@ -40,14 +40,15 @@ namespace TicketSystem.Controllers
 
                 if (user != null)
                 {
+                    // ذخیره اطلاعات کاربر در Session
                     HttpContext.Session.SetInt32("UserId", user.Id);
                     HttpContext.Session.SetString("UserName", user.FullName);
                     HttpContext.Session.SetString("UserRole", user.Role);
 
+                    // هدایت بر اساس نقش
                     if (user.Role == "Admin")
-                    {
-                        return RedirectToAction("Dashboard", "Admin");
-                    }
+                        return RedirectToAction("AllTickets", "Admin");
+                    
                     return RedirectToAction("Dashboard", "Tickets");
                 }
 
@@ -56,25 +57,22 @@ namespace TicketSystem.Controllers
             return View(model);
         }
 
-        // GET: /Account/Register
+        // صفحه ثبت‌نام
         public IActionResult Register()
         {
             if (HttpContext.Session.GetInt32("UserId") != null)
-            {
                 return RedirectToAction("Dashboard", "Tickets");
-            }
             return View();
         }
 
-        // POST: /Account/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var existingUser = await _context.Users.AnyAsync(u => u.Email == model.Email);
-                if (existingUser)
+                // چک کردن تکراری نبودن ایمیل
+                if (await _context.Users.AnyAsync(u => u.Email == model.Email))
                 {
                     ModelState.AddModelError("Email", "این ایمیل قبلاً ثبت شده است");
                     return View(model);
@@ -84,14 +82,14 @@ namespace TicketSystem.Controllers
                 {
                     FullName = model.FullName,
                     Email = model.Email,
-                    PasswordHash = model.Password, // Note:  production, hash the password!
+                    PasswordHash = model.Password,
                     Role = "User"
                 };
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                // Auto login after registration
+                // ورود خودکار بعد از ثبت‌نام
                 HttpContext.Session.SetInt32("UserId", user.Id);
                 HttpContext.Session.SetString("UserName", user.FullName);
                 HttpContext.Session.SetString("UserRole", user.Role);
@@ -101,11 +99,11 @@ namespace TicketSystem.Controllers
             return View(model);
         }
 
-        // GET: /Account/Logout
+        // خروج
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login");
         }
     }
 }

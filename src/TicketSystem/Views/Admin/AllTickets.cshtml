@@ -1,0 +1,86 @@
+@model List<TicketSystem.ViewModels.AdminTicketListViewModel>
+@{
+    ViewData["Title"] = "مدیریت درخواست‌ها";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-clipboard-data me-2"></i>مدیریت درخواست‌ها</h2>
+        <span class="badge bg-primary fs-6">@Model.Count درخواست</span>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow">
+        <div class="card-body p-0">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>عنوان</th>
+                                <th>کاربر</th>
+                                <th>ایمیل</th>
+                                <th>وضعیت</th>
+                                <th>تاریخ ثبت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ticket in Model)
+                            {
+                                <tr>
+                                    <td>@ticket.Id</td>
+                                    <td>@ticket.Title</td>
+                                    <td>@ticket.UserFullName</td>
+                                    <td><small class="text-muted">@ticket.UserEmail</small></td>
+                                    <td>
+                                        @{
+                                            var badgeClass = ticket.Status switch
+                                            {
+                                                "Open" => "bg-warning text-dark",
+                                                "InProgress" => "bg-info",
+                                                "Closed" => "bg-success",
+                                                _ => "bg-secondary"
+                                            };
+                                            var statusText = ticket.Status switch
+                                            {
+                                                "Open" => "باز",
+                                                "InProgress" => "در حال بررسی",
+                                                "Closed" => "بسته شده",
+                                                _ => ticket.Status
+                                            };
+                                        }
+                                        <span class="badge @badgeClass">@statusText</span>
+                                    </td>
+                                    <td><small>@ticket.CreatedAt.ToString("yyyy/MM/dd HH:mm")</small></td>
+                                    <td>
+                                        <a asp-action="TicketDetails" asp-route-id="@ticket.Id" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> مشاهده
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <p class="text-muted mt-3">هیچ درخواستی ثبت نشده است</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
