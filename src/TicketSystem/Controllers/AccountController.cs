@@ -18,12 +18,11 @@ namespace TicketSystem.Controllers
         // صفحه ورود
         public IActionResult Login()
         {
-            // اگر قبلاً لاگین کرده، به داشبورد برو
             if (HttpContext.Session.GetInt32("UserId") != null)
             {
                 var role = HttpContext.Session.GetString("UserRole");
                 if (role == "Admin")
-                    return RedirectToAction("AllTickets", "Admin");
+                    return RedirectToAction("Dashboard", "Admin");
                 return RedirectToAction("Dashboard", "Tickets");
             }
             return View();
@@ -40,14 +39,12 @@ namespace TicketSystem.Controllers
 
                 if (user != null)
                 {
-                    // ذخیره اطلاعات کاربر در Session
                     HttpContext.Session.SetInt32("UserId", user.Id);
                     HttpContext.Session.SetString("UserName", user.FullName);
                     HttpContext.Session.SetString("UserRole", user.Role);
 
-                    // هدایت بر اساس نقش
                     if (user.Role == "Admin")
-                        return RedirectToAction("AllTickets", "Admin");
+                        return RedirectToAction("Dashboard", "Admin");
                     
                     return RedirectToAction("Dashboard", "Tickets");
                 }
@@ -71,7 +68,6 @@ namespace TicketSystem.Controllers
         {
             if (ModelState.IsValid)
             {
-                // چک کردن تکراری نبودن ایمیل
                 if (await _context.Users.AnyAsync(u => u.Email == model.Email))
                 {
                     ModelState.AddModelError("Email", "این ایمیل قبلاً ثبت شده است");
@@ -89,7 +85,6 @@ namespace TicketSystem.Controllers
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                // ورود خودکار بعد از ثبت‌نام
                 HttpContext.Session.SetInt32("UserId", user.Id);
                 HttpContext.Session.SetString("UserName", user.FullName);
                 HttpContext.Session.SetString("UserRole", user.Role);

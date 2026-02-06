@@ -1,0 +1,184 @@
+@model TicketSystem.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "داشبورد مدیریت";
+}
+
+<div class="container-fluid">
+    <h2 class="mb-4">
+        <i class="fas fa-tachometer-alt me-2"></i>
+        داشبورد مدیریت
+    </h2>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">کل تیکت‌ها</h6>
+                            <h2 class="mb-0">@Model.TotalTickets</h2>
+                        </div>
+                        <i class="fas fa-ticket-alt fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">تیکت‌های باز</h6>
+                            <h2 class="mb-0">@Model.OpenTickets</h2>
+                        </div>
+                        <i class="fas fa-folder-open fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">در حال بررسی</h6>
+                            <h2 class="mb-0">@Model.InProgressTickets</h2>
+                        </div>
+                        <i class="fas fa-spinner fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">بسته شده</h6>
+                            <h2 class="mb-0">@Model.ClosedTickets</h2>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Row Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h6>کاربران</h6>
+                    <h3>@Model.TotalUsers</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-week fa-2x text-success mb-2"></i>
+                    <h6>تیکت‌های این هفته</h6>
+                    <h3>@Model.ThisWeekTickets</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-percentage fa-2x text-info mb-2"></i>
+                    <h6>نرخ تکمیل</h6>
+                    <h3>@Model.CompletionRate%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Chart & Recent Tickets -->
+    <div class="row">
+        <div class="col-md-7 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    تیکت‌های هفته اخیر
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-end" style="height: 200px;">
+                        @{
+                            var maxCount = Model.WeeklyStats.Any() ? Model.WeeklyStats.Max(s => s.Count) : 1;
+                        }
+                        @foreach (var stat in Model.WeeklyStats)
+                        {
+                            var height = maxCount > 0 ? (stat.Count * 150 / maxCount) : 5;
+                            <div class="text-center" style="flex: 1;">
+                                <div class="bg-primary mx-1 rounded-top" style="height: @(height)px; min-height: 5px;"></div>
+                                <small class="d-block mt-2">@stat.Day</small>
+                                <small class="text-muted">@stat.Count</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-clock me-2"></i>
+                    آخرین تیکت‌ها
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.RecentTickets.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var ticket in Model.RecentTickets)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <a href="@Url.Action("TicketDetails", "Admin", new { id = ticket.Id })" class="text-decoration-none">
+                                            @ticket.Title
+                                        </a>
+                                        <br />
+                                        <small class="text-muted">@ticket.UserName - @ticket.CreatedAt.ToString("MM/dd HH:mm")</small>
+                                    </div>
+                                    @{
+                                        var badgeClass = ticket.Status switch
+                                        {
+                                            "Open" => "bg-warning text-dark",
+                                            "InProgress" => "bg-info",
+                                            "Closed" => "bg-success",
+                                            _ => "bg-secondary"
+                                        };
+                                        var statusText = ticket.Status switch
+                                        {
+                                            "Open" => "باز",
+                                            "InProgress" => "در حال بررسی",
+                                            "Closed" => "بسته",
+                                            _ => ticket.Status
+                                        };
+                                    }
+                                    <span class="badge @badgeClass">@statusText</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="p-3 text-center text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p>تیکتی وجود ندارد</p>
+                        </div>
+                    }
+                </div>
+                <div class="card-footer">
+                    <a href="@Url.Action("AllTickets", "Admin")" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="fas fa-list me-1"></i>
+                        مشاهده همه تیکت‌ها
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
